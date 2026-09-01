@@ -1,0 +1,15 @@
+# OS noise
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs & temp
+*.log
+*.tmp
+
+# Local-only data (never commit personal exports)
+alter-export.json
+*.bak
+
+# Dependencies (if any are added later)
+node_modules/

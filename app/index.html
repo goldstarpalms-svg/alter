@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#05070d" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="ALTER" />
+<title>ALTER — Your AI Self</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" href="icon-192.png" />
+<link rel="apple-touch-icon" href="icon-192.png" />
+<style>
+  :root {
+    --bg: #05070d;
+    --panel: #0a1018;
+    --panel-2: #0d1420;
+    --line: #16202e;
+    --line-2: #1f2b3d;
+    --text: #cfe3f2;
+    --muted: #5f7488;
+    --accent: #29d8ff;       /* cyan */
+    --accent-2: #9ff1ff;
+    --accent-dim: rgba(41,216,255,0.14);
+    --green: #35e08a;
+    --amber: #ffc14d;
+    --red: #ff5d64;
+    --radius: 14px;
+    --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  body[data-theme="purple"] { --accent:#b93bff; --accent-2:#e7b8ff; --accent-dim:rgba(185,59,255,.16); }
+  body[data-theme="green"]  { --accent:#2cf79a; --accent-2:#b5ffdd; --accent-dim:rgba(44,247,154,.16); }
+  body[data-theme="amber"]  { --accent:#ffb020; --accent-2:#ffe2a8; --accent-dim:rgba(255,176,32,.16); }
+  body[data-theme="red"]    { --accent:#ff5d64; --accent-2:#ffc0c3; --accent-dim:rgba(255,93,100,.16); }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font);
+    background:
+      radial-gradient(1200px 600px at 80% -10%, var(--accent-dim), transparent 60%),
+      radial-gradient(800px 500px at -10% 110%, var(--accent-dim), transparent 55%),
+      var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+  [hidden] { display: none !important; }
+  ::selection { background: var(--accent); color: #04121a; }
+
+  /* ---------- Top bar ---------- */
+  .top {
+    position: sticky; top: 0; z-index: 30;
+    display: flex; align-items: center; gap: 1rem;
+    padding: 0.65rem 1rem;
+    background: rgba(6, 10, 17, 0.9);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    font-family: var(--mono); font-size: 0.72rem;
+  }
+  .top .logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; letter-spacing: 0.15em; color: var(--accent-2); }
+  .top .logo b { color: var(--accent); }
+  .top .logo .ver { color: var(--muted); font-weight: 400; }
+  .top .tagline { color: var(--muted); }
+  .top .right { margin-left: auto; display: flex; gap: 0.5rem; align-items: center; }
+  .pill { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--muted); }
+  .pill .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .pill b { color: var(--text); font-weight: 600; }
+  .clock { color: var(--accent); }
+  .bell { position: relative; background: none; border: 0; color: var(--muted); font-size: 1.05rem; cursor: pointer; padding: 0.2rem 0.4rem; }
+  .bell:hover { color: var(--accent); }
+  .bell .badge {
+    position: absolute; top: -2px; right: -2px; background: var(--red); color: #fff;
+    font-size: 0.6rem; font-weight: 800; min-width: 16px; height: 16px; border-radius: 9px;
+    display: grid; place-items: center; padding: 0 4px;
+  }
+  @media (max-width: 720px) { .top .tagline, .top .pill { display: none; } }
+
+  /* ---------- Layout ---------- */
+  .layout { display: grid; grid-template-columns: 340px 1fr; height: calc(100dvh - 50px); max-width: 1280px; margin: 0 auto; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } }
+
+  /* ---------- Left ---------- */
+  .left { display: flex; flex-direction: column; gap: 1rem; padding: 1.2rem; border-right: 1px solid var(--line); min-height: 0; }
+  @media (max-width: 900px) { .left { border-right: 0; border-bottom: 1px solid var(--line); } }
+
+  .self-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.4rem; text-align: center; }
+  .avatar-wrap { position: relative; width: 120px; height: 120px; margin: 0 auto 0.8rem; }
+  .avatar-ring { position: absolute; inset: 0; border-radius: 50%; border: 1px solid var(--accent-dim); animation: spin 14s linear infinite; }
+  .avatar-ring::before { content: ""; position: absolute; top: -3px; left: 50%; width: 8px; height: 8px; background: var(--accent); border-radius: 50%; box-shadow: 0 0 10px var(--accent); transform: translateX(-50%); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .avatar {
+    position: absolute; inset: 12px; border-radius: 40%; background: #0a1622;
+    border: 2px solid var(--accent);
+    box-shadow: 0 0 22px var(--accent-dim), inset 0 0 26px var(--accent-dim);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px;
+    transition: opacity 0.25s, transform 0.25s; overflow: hidden;
+  }
+  .avatar .eyes { display: flex; gap: 12px; }
+  .avatar .eye { width: 11px; height: 26px; border-radius: 8px; background: var(--accent-2); box-shadow: 0 0 10px var(--accent); transition: transform 0.12s ease, border-radius 0.2s; }
+  .avatar .mouth { width: 26px; height: 4px; border-radius: 4px; background: var(--accent); opacity: 0.7; transition: height 0.1s; }
+  .avatar.idle .avatar-wrap { }
+  .avatar.idle .eye { animation: breathe 4s ease-in-out infinite; }
+  @keyframes breathe { 0%,100% { height: 24px; } 50% { height: 28px; } }
+  .avatar.talking .eye { animation: blink 0.5s ease-in-out infinite; }
+  .avatar.talking .mouth { height: 8px; animation: mouthmove 0.25s ease-in-out infinite; }
+  @keyframes mouthmove { 0%,100% { height: 3px; } 50% { height: 9px; } }
+  @keyframes blink { 0%,100% { transform: scaleY(1); } 50% { transform: scaleY(0.12); } }
+  .avatar.listening .eye { animation: pulse 0.6s ease-in-out infinite; }
+  .avatar.listening .mouth { opacity: 0; }
+  @keyframes pulse { 0%,100% { height: 18px; } 50% { height: 34px; } }
+  .avatar.thinking { opacity: 0.85; }
+  .avatar.thinking .eye { animation: scan 0.9s linear infinite; }
+  @keyframes scan { 0%,100% { transform: translateY(-4px); } 50% { transform: translateY(4px); } }
+  .avatar.happy .eye { border-radius: 50%; height: 14px; width: 14px; }
+  .avatar.sad .eye { height: 14px; transform: translateY(3px); }
+  .avatar.sad .mouth { transform: translateY(3px); height: 3px; background: var(--muted); }
+  .self-card h1 { font-size: 1.05rem; letter-spacing: 0.3em; color: var(--accent-2); font-weight: 700; }
+  .self-card .sub { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.2em; margin-top: 0.2rem; }
+  .self-card .status { display: inline-flex; align-items: center; gap: 0.4rem; margin-top: 0.7rem; font-size: 0.72rem; color: var(--green); letter-spacing: 0.15em; }
+  .self-card .status .dot { width: 6px; height: 6px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); }
+  .holo-btn { margin-top: 0.9rem; width: 100%; background: var(--accent-dim); color: var(--accent-2); border: 1px solid var(--accent-dim); border-radius: 10px; padding: 0.5rem; font-weight: 600; font-size: 0.82rem; cursor: pointer; transition: 0.2s; }
+  .holo-btn:hover { background: var(--accent-dim); }
+  .holo-btn.active { background: var(--accent); color: #04121a; border-color: var(--accent); }
+
+  /* Chat log */
+  .chatlog { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 0.7rem; padding: 0.2rem 0.2rem 0.2rem 0; min-height: 0; scroll-behavior: smooth; }
+  .chatlog::-webkit-scrollbar { width: 6px; }
+  .chatlog::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 10px; }
+  .msg { display: flex; flex-direction: column; gap: 0.3rem; max-width: 92%; }
+  .msg .who { font-family: var(--mono); font-size: 0.66rem; color: var(--muted); letter-spacing: 0.1em; }
+  .msg .bub { padding: 0.6rem 0.85rem; border-radius: 12px; font-size: 0.9rem; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+  .msg.user { align-self: flex-end; align-items: flex-end; }
+  .msg.user .bub { background: var(--panel-2); border: 1px solid var(--line-2); color: var(--text); }
+  .msg.ai { align-self: flex-start; }
+  .msg.ai .bub { background: var(--accent-dim); border: 1px solid var(--accent-dim); color: var(--accent-2); }
+  .msg.typing .bub::after { content: "▍"; animation: caret 0.8s steps(1) infinite; color: var(--accent); }
+  @keyframes caret { 50% { opacity: 0; } }
+  .chat-actions { display: flex; gap: 0.5rem; justify-content: center; }
+  .chat-actions button { background: none; border: 0; color: var(--muted); font-family: var(--mono); font-size: 0.68rem; cursor: pointer; }
+  .chat-actions button:hover { color: var(--accent); }
+
+  /* Input */
+  .inputrow { display: flex; gap: 0.6rem; align-items: flex-end; }
+  .inputrow textarea { flex: 1; resize: none; background: var(--panel-2); color: var(--text); border: 1px solid var(--line-2); border-radius: 12px; padding: 0.72rem 0.9rem; font-family: var(--font); font-size: 0.94rem; line-height: 1.4; min-height: 46px; max-height: 140px; }
+  .inputrow textarea:focus { outline: 0; border-color: var(--accent); }
+  .inputrow textarea::placeholder { color: var(--muted); }
+  .send { width: 46px; height: 46px; flex-shrink: 0; border-radius: 12px; border: 0; background: var(--accent); color: #04121a; font-size: 1.1rem; cursor: pointer; transition: 0.18s; display: grid; place-items: center; }
+  .send:hover { background: var(--accent-2); transform: translateY(-1px); }
+  .send:disabled { opacity: 0.4; cursor: not-allowed; }
+  .voice { width: 46px; height: 46px; flex-shrink: 0; border-radius: 12px; border: 1px solid var(--line-2); background: var(--panel); color: var(--accent); font-size: 1.05rem; cursor: pointer; transition: 0.18s; display: grid; place-items: center; }
+  .voice.listening { border-color: var(--accent); background: var(--accent-dim); animation: pulse2 1s infinite; }
+  @keyframes pulse2 { 0%,100% { box-shadow: 0 0 0 0 var(--accent-dim); } 50% { box-shadow: 0 0 0 8px var(--accent-dim); } }
+
+  /* ---------- Right ---------- */
+  .right { overflow-y: auto; padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem; min-height: 0; }
+  .right::-webkit-scrollbar { width: 6px; }
+  .right::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 10px; }
+  @media (max-width: 900px) { .right { display: none; } .layout.show-right .right { display: flex; } }
+
+  .tabs { display: flex; gap: 0.4rem; border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; overflow-x: auto; }
+  .tab { background: none; border: 0; color: var(--muted); font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em; padding: 0.5rem 0.8rem; cursor: pointer; border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent; transition: 0.18s; white-space: nowrap; }
+  .tab.active { color: var(--accent-2); border-bottom-color: var(--accent); }
+  .tab:hover { color: var(--text); }
+
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 1.1rem; }
+  .panel h2 { font-family: var(--mono); font-size: 0.78rem; color: var(--muted); letter-spacing: 0.12em; text-transform: uppercase; margin-bottom: 0.8rem; display: flex; justify-content: space-between; align-items: center; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 720px) { .grid2 { grid-template-columns: 1fr; } }
+  .kv { display: grid; grid-template-columns: 1fr auto; gap: 0.4rem; font-size: 0.82rem; }
+  .kv dt { color: var(--muted); }
+  .kv dd { color: var(--text); font-family: var(--mono); text-align: right; }
+  .kv dd.ok { color: var(--green); }
+  .stat { display: flex; flex-direction: column; gap: 0.4rem; }
+  .stat .lbl { display: flex; justify-content: space-between; font-size: 0.78rem; }
+  .stat .val { color: var(--accent-2); font-family: var(--mono); }
+  .bar { height: 8px; background: var(--panel-2); border-radius: 6px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--accent); border-radius: 6px; transition: width 0.5s ease; }
+  .bar.warm > i { background: var(--amber); }
+  .bar.hot > i { background: var(--red); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid var(--line); }
+  th { font-family: var(--mono); color: var(--muted); font-weight: 400; font-size: 0.7rem; letter-spacing: 0.08em; }
+  td { color: var(--text); font-family: var(--mono); }
+  td .muted-sm { color: var(--muted); }
+  .tag { padding: 0.15rem 0.5rem; border-radius: 6px; font-size: 0.66rem; font-weight: 700; }
+  .tag.run { background: var(--accent-dim); color: var(--accent-2); }
+  .tag.idle { background: rgba(255,193,77,0.14); color: var(--amber); }
+  .tag.done { background: rgba(53,224,138,0.14); color: var(--green); }
+
+  .log { display: flex; flex-direction: column; gap: 0.5rem; font-family: var(--mono); font-size: 0.76rem; }
+  .log .entry { display: flex; gap: 0.6rem; }
+  .log .t { color: var(--muted); }
+  .log .lvl { font-weight: 700; }
+  .log .lvl.info { color: var(--accent-2); }
+  .log .lvl.ok { color: var(--green); }
+  .log .lvl.warn { color: var(--amber); }
+  .log .lvl.err { color: var(--red); }
+  .log .m { color: var(--text); }
+
+  .mind p { font-size: 0.88rem; color: var(--muted); margin-bottom: 0.9rem; line-height: 1.5; }
+  .mind label { display: block; font-size: 0.78rem; color: var(--text); margin-bottom: 0.4rem; }
+  .mind input[type="text"], .mind input[type="password"], .mind select, .mind textarea {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 10px;
+    color: var(--text); padding: 0.7rem 0.9rem; font-family: var(--mono); font-size: 0.82rem;
+  }
+  .mind select { cursor: pointer; }
+  .btns { display: flex; gap: 0.6rem; flex-wrap: wrap; margin-top: 0.9rem; }
+  .btn { background: var(--accent); color: #04121a; border: 0; border-radius: 10px; font-weight: 700; font-size: 0.82rem; padding: 0.6rem 1.1rem; cursor: pointer; transition: 0.18s; }
+  .btn:hover { background: var(--accent-2); }
+  .btn.ghost { background: var(--panel-2); color: var(--text); border: 1px solid var(--line-2); }
+  .btn.ghost:hover { border-color: var(--accent); }
+  .connok { color: var(--green); font-size: 0.82rem; margin-top: 0.5rem; }
+  .connerr { color: var(--red); font-size: 0.82rem; margin-top: 0.5rem; }
+
+  .list { display: flex; flex-direction: column; gap: 0.5rem; }
+  .li { display: flex; justify-content: space-between; gap: 0.6rem; font-size: 0.82rem; background: var(--panel-2); border: 1px solid var(--line); border-radius: 10px; padding: 0.6rem 0.8rem; }
+  .li .txt { color: var(--text); flex: 1; }
+  .li .meta { color: var(--muted); font-family: var(--mono); font-size: 0.7rem; white-space: nowrap; }
+  .li .kind { text-transform: uppercase; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; padding: 0.1rem 0.4rem; border-radius: 5px; }
+  .li .kind.fact { background: var(--accent-dim); color: var(--accent-2); }
+  .li .kind.note { background: rgba(255,193,77,0.14); color: var(--amber); }
+  .li .kind.task { background: rgba(53,224,138,0.14); color: var(--green); }
+  .empty { color: var(--muted); font-size: 0.82rem; padding: 0.6rem 0; }
+  .link { color: var(--accent); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+  .search { width: 100%; background: var(--panel-2); border: 1px solid var(--line-2); border-radius: 10px; color: var(--text); padding: 0.55rem 0.8rem; font-family: var(--font); font-size: 0.85rem; margin-bottom: 0.8rem; }
+  .search:focus { outline: 0; border-color: var(--accent); }
+
+  /* Theme swatches */
+  .swatches { display: flex; gap: 0.6rem; }
+  .sw { width: 40px; height: 40px; border-radius: 12px; cursor: pointer; border: 2px solid var(--line-2); position: relative; }
+  .sw.active { border-color: var(--text); box-shadow: 0 0 0 3px var(--accent-dim); }
+  .sw.active::after { content: "✓"; position: absolute; inset: 0; display: grid; place-items: center; color: #04121a; font-weight: 800; }
+
+  /* Holo overlay */
+  #holo { position: fixed; inset: 0; z-index: 90; background: #000; display: none; }
+  #holo.on { display: block; }
+  #holo video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: brightness(0.6) contrast(1.1); }
+  .holo-self { position: absolute; left: 50%; top: 42%; transform: translate(-50%, -50%); width: min(64vw, 300px); aspect-ratio: 1/1; border-radius: 45%; background: #04121a; border: 2px solid var(--accent); box-shadow: 0 0 40px var(--accent-dim), inset 0 0 40px var(--accent-dim); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; opacity: 0.85; }
+  .holo-self .eyes { display: flex; gap: 14px; }
+  .holo-self .eye { width: 16px; height: 34px; border-radius: 9px; background: var(--accent-2); box-shadow: 0 0 14px var(--accent); transition: height 0.1s; }
+  .holo-caption { position: absolute; left: 50%; top: 76%; transform: translateX(-50%); font-family: var(--mono); font-size: 0.72rem; color: var(--accent-2); background: rgba(4,10,15,0.6); padding: 0.5rem 0.9rem; border-radius: 8px; max-width: 84vw; text-align: center; }
+  .holo-x { position: absolute; top: 1rem; right: 1rem; z-index: 100; background: rgba(255,255,255,0.1); color: #fff; border: 0; border-radius: 50%; width: 44px; height: 44px; font-size: 1.3rem; cursor: pointer; }
+  .holo-x:hover { background: var(--red); }
+  .holo-hint { position: absolute; bottom: 1rem; width: 100%; text-align: center; font-size: 0.72rem; color: #6f8496; }
+
+  .badge { display: inline-block; background: var(--accent-dim); color: var(--accent-2); border-radius: 6px; padding: 0.2rem 0.5rem; font-size: 0.72rem; font-weight: 700; }
+
+  /* Toasts */
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--panel-2); border: 1px solid var(--line-2); color: var(--text); padding: 0.7rem 1.2rem; border-radius: 12px; font-size: 0.85rem; box-shadow: 0 10px 30px rgba(0,0,0,.4); z-index: 300; opacity: 0; transition: 0.25s; max-width: 90vw; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  /* Reminders dropdown */
+  .rem-pop { position: fixed; top: 50px; right: 10px; z-index: 120; width: min(340px, 92vw); background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--radius); box-shadow: 0 20px 50px rgba(0,0,0,.5); padding: 1rem; display: none; }
+  .rem-pop.open { display: block; }
+  .rem-pop h3 { font-family: var(--mono); font-size: 0.78rem; color: var(--accent-2); letter-spacing: .1em; margin-bottom: 0.7rem; }
+
+  @media (max-width: 720px) {
+    .layout { height: auto; min-height: calc(100dvh - 50px); }
+    body { overflow: auto; }
+    .left { padding: 0.8rem; }
+    .self-card { padding: 1.1rem; }
+    .right { padding: 0.8rem; }
+  }
+</style>
+</head>
+<body data-theme="cyan">
+
+  <!-- ===== TOP BAR ===== -->
+  <header class="top">
+    <div class="logo"><b>◈</b> ALTER <span class="ver">v2.8.0</span></div>
+    <span class="tagline">Always on. Always learning.</span>
+    <div class="right">
+      <button class="bell" id="bell" title="Reminders">🔔<span class="badge" id="bellBadge" hidden>0</span></button>
+      <span class="pill"><span class="dot"></span> SYSTEM ONLINE</span>
+      <span class="pill">MEM <b id="memPct">28%</b></span>
+      <span class="clock" id="clock">00:00:00</span>
+    </div>
+  </header>
+
+  <!-- ===== REMINDERS POPUP ===== -->
+  <div class="rem-pop" id="remPop">
+    <h3>🔔 Reminders &amp; Tasks</h3>
+    <div class="list" id="remList"></div>
+    <div class="btns"><button class="btn ghost" id="notifyBtn" style="margin-top:0.2rem">Enable notifications</button></div>
+  </div>
+
+  <!-- ===== HOLO MODE ===== -->
+  <div id="holo">
+    <video id="cam" autoplay muted playsinline></video>
+    <div class="holo-self">
+      <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+      <div class="holo-self-mouth" style="width:34px;height:5px;border-radius:5px;background:var(--accent);opacity:.7"></div>
+    </div>
+    <div class="holo-caption" id="holoCaption">ALTER — Your AI Self, floating in your room.</div>
+    <button class="holo-x" id="holoX" aria-label="Exit holo mode">×</button>
+    <div class="holo-hint">Holo mode — voice on. Try "what time is it" or speak a reminder.</div>
+  </div>
+
+  <!-- ===== MAIN LAYOUT ===== -->
+  <main class="layout" id="layout">
+    <!-- LEFT -->
+    <section class="left">
+      <div class="self-card">
+        <div class="avatar-wrap">
+          <div class="avatar-ring"></div>
+          <div class="avatar idle" id="avatar">
+            <div class="eyes"><div class="eye"></div><div class="eye"></div></div>
+            <div class="mouth"></div>
+          </div>
+        </div>
+        <h1>ALTER</h1>
+        <div class="sub">AI ASSISTANT • v2.8</div>
+        <div class="status"><span class="dot"></span> <span id="selfStatus">ONLINE</span></div>
+        <button class="holo-btn" id="holoBtn">👁 Enter Holo Mode</button>
+      </div>
+
+      <div class="chatlog" id="chatlog"></div>
+
+      <div class="inputrow">
+        <button class="voice" id="voiceBtn" title="Talk to ALTER">🎤</button>
+        <textarea id="input" rows="1" placeholder="Type your message…"></textarea>
+        <button class="send" id="sendBtn" title="Send">➤</button>
+      </div>
+    </section>
+
+    <!-- RIGHT -->
+    <section class="right">
+      <nav class="tabs">
+        <button class="tab active" data-tab="overview">▤ Overview</button>
+        <button class="tab" data-tab="tasks">≣ Tasks</button>
+        <button class="tab" data-tab="memory">◈ Memory</button>
+        <button class="tab" data-tab="knowledge">✦ Knowledge</button>
+        <button class="tab" data-tab="settings">⚙ Settings</button>
+      </nav>
+
+      <div id="tab-overview">
+        <div class="grid2">
+          <div class="panel">
+            <h2>System Overview</h2>
+            <dl class="kv">
+              <dt>Hostname</dt><dd>neuron-self-01</dd>
+              <dt>Uptime</dt><dd id="uptime">0m</dd>
+              <dt>OS</dt><dd>Local Browser</dd>
+              <dt>Architecture</dt><dd>PWA</dd>
+              <dt>Time zone</dt><dd id="tz">UTC</dd>
+              <dt>Load average</dt><dd id="load">0.00 0.00 0.00</dd>
+              <dt>Users</dt><dd>1</dd>
+              <dt>System status</dt><dd class="ok">OPTIMAL</dd>
+            </dl>
+          </div>
+          <div class="panel">
+            <h2>Resource Usage</h2>
+            <div class="stat"><div class="lbl"><span>CPU</span><span class="val" id="cpuVal">12%</span></div><div class="bar"><i id="cpuBar" style="width:12%"></i></div></div>
+            <div class="stat" style="margin-top:0.8rem"><div class="lbl"><span>Memory</span><span class="val" id="memVal">28%</span></div><div class="bar"><i id="memBar" style="width:28%"></i></div></div>
+            <div class="stat" style="margin-top:0.8rem"><div class="lbl"><span>Storage</span><span class="val" id="storeVal">0%</span></div><div class="bar"><i id="storeBar" style="width:0%"></i></div></div>
+            <div class="stat" style="margin-top:0.8rem"><div class="lbl"><span>Network</span><span class="val" id="netVal">0 kb/s</span></div><div class="bar"><i id="netBar" style="width:0%"></i></div></div>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:1rem">
+          <h2>Self state</h2>
+          <dl class="kv">
+            <dt>Facts remembered</dt><dd id="memCount">0</dd>
+            <dt>Conversation turns</dt><dd id="turnCount">0</dd>
+            <dt>Mind</dt><dd id="mindState">Offline demo brain</dd>
+            <dt>Voice</dt><dd id="voiceState">On</dd>
+          </dl>
+          <div class="btns">
+            <button class="btn ghost" id="digestBtn">📅 Daily digest</button>
+            <button class="btn ghost" id="exportBtn">Export JSON</button>
+            <button class="btn ghost" id="wipeBtn">Wipe memory</button>
+          </div>
+        </div>
+
+        <div class="panel" style="margin-top:1rem">
+          <h2>Recent activity</h2>
+          <div class="log" id="activityLog"></div>
+        </div>
+      </div>
+
+      <div id="tab-tasks" hidden>
+        <div class="panel">
+          <h2>Tasks &amp; Reminders</h2>
+          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">Try in chat: <b style="color:var(--accent-2)">"remind me to call Sam at 5pm"</b>, <b style="color:var(--accent-2)">"remind me in 30 minutes to stretch"</b>, or <b style="color:var(--accent-2)">"remind me tomorrow 9am to email the invoice"</b>.</p>
+          <table>
+            <thead><tr><th>ID</th><th>Task</th><th>Status</th><th>Due</th><th></th></tr></thead>
+            <tbody id="taskRows"></tbody>
+          </table>
+          <div class="btns"><button class="btn ghost" id="clearTasks">Clear completed</button></div>
+        </div>
+        <div class="panel" style="margin-top:1rem">
+          <h2>Add manually</h2>
+          <div class="inputrow">
+            <textarea id="taskInput" rows="1" placeholder="e.g. Water the plants at 6pm"></textarea>
+            <button class="send" id="taskAdd" title="Add">＋</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-memory" hidden>
+        <div class="panel">
+          <h2>On-device memory <span class="badge">LOCAL ONLY</span></h2>
+          <p style="font-size:0.82rem;color:var(--muted);margin-bottom:0.8rem">Facts, notes and reminders ALTER holds about you. Use the chat (<b style="color:var(--accent-2)">remember …</b>, <b style="color:var(--accent-2)">note …</b>) or add below.</p>
+          <input class="search" id="memSearch" placeholder="Search memory…" />
+          <div class="inputrow">
+            <textarea id="memInput" rows="1" placeholder="Add a memory…"></textarea>
+            <button class="send" id="memAdd" title="Save">＋</button>
+          </div>
+          <div class="list" id="memList" style="margin-top:1rem"></div>
+        </div>
+      </div>
+
+      <div id="tab-knowledge" hidden>
+        <div class="panel mind">
+          <h2>MIND — world knowledge</h2>
+          <p>ALTER ships with a <b style="color:var(--accent-2)">free offline demo brain</b>. Paste a <b style="color:var(--accent-2)">Gemini API key</b> (free at aistudio.google.com) to unlock real world knowledge. The key never leaves your device.</p>
+          <label>Gemini API Key</label>
+          <input id="keyInput" type="password" placeholder="AIza…" autocomplete="off" spellcheck="false" />
+          <label style="margin-top:0.7rem">Model</label>
+          <select id="modelSelect">
+            <option value="gemini-2.0-flash">gemini-2.0-flash (fast)</option>
+            <option value="gemini-2.5-flash">gemini-2.5-flash (balanced)</option>
+            <option value="gemini-2.5-pro">gemini-2.5-pro (smartest)</option>
+            <option value="gemini-1.5-flash">gemini-1.5-flash (older)</option>
+          </select>
+          <div class="btns">
+            <button class="btn" id="saveKey">Save &amp; Test</button>
+            <button class="btn ghost" id="removeKey">Remove key</button>
+          </div>
+          <div id="connOut"></div>
+          <div class="btns" style="margin-top:1rem">
+            <button class="btn ghost" id="digestBtn2">📅 Generate digest</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-settings" hidden>
+        <div class="panel mind">
+          <h2>Appearance</h2>
+          <label>Theme</label>
+          <div class="swatches" id="swatches">
+            <div class="sw active" data-theme="cyan" style="background:#29d8ff"></div>
+            <div class="sw" data-theme="purple" style="background:#b93bff"></div>
+            <div class="sw" data-theme="green" style="background:#2cf79a"></div>
+            <div class="sw" data-theme="amber" style="background:#ffb020"></div>
+            <div class="sw" data-theme="red" style="background:#ff5d64"></div>
+          </div>
+        </div>
+        <div class="panel mind" style="margin-top:1rem">
+          <h2>Preferences</h2>
+          <label>Your name (ALTER uses it)</label>
+          <input id="nameInput" type="text" placeholder="e.g. David" spellcheck="false" />
+          <label style="margin-top:0.8rem">Voice output (TTS)</label>
+          <div class="btns"><button class="btn ghost" id="ttsOn">🔊 On</button><button class="btn ghost" id="ttsOff">🔇 Off</button></div>
+          <label style="margin-top:0.9rem">Conversation history</label>
+          <div class="btns"><button class="btn ghost" id="clearHistory">Clear chat history</button></div>
+        </div>
+        <div class="panel mind" style="margin-top:1rem">
+          <h2>Danger zone</h2>
+          <div class="btns"><button class="btn ghost" id="reload">🔄 Reload app</button><button class="btn ghost" id="clearAll">🧨 Erase everything</button></div>
+          <p style="font-size:0.72rem;color:var(--muted);margin-top:0.8rem">ALTER keeps a full audit log of every action in <b style="color:var(--accent-2)">Overview → Recent activity</b>.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var LS = "alter.state.v2";
+  var KEY_LS = "alter.key.v2";
+  var NAME_LS = "alter.name.v2";
+
+  /* ---------- State ---------- */
+  var state = { memory: [], tasks: [], turns: 0, theme: "cyan", history: [] };
+  var geminiKey = null, geminiModel = "gemini-2.0-flash";
+  var ttsOn = true, userName = "";
+  var notifiedTasks = {};   // task id -> true if already pinged
+
+  function load() {
+    try { var s = JSON.parse(localStorage.getItem(LS)); if (s) state = Object.assign(state, s); } catch (e) {}
+    if (!Array.isArray(state.memory)) state.memory = [];
+    if (!Array.isArray(state.tasks)) state.tasks = [];
+    if (!Array.isArray(state.history)) state.history = [];
+    geminiKey = localStorage.getItem(KEY_LS) || null;
+    geminiModel = localStorage.getItem("alter.model") || "gemini-2.0-flash";
+    ttsOn = localStorage.getItem("alter.tts") !== "0";
+    userName = localStorage.getItem(NAME_LS) || "";
+  }
+  function save() {
+    localStorage.setItem(LS, JSON.stringify(state));
+    localStorage.setItem("alter.tts", ttsOn ? "1" : "0");
+    localStorage.setItem(NAME_LS, userName);
+  }
+
+  /* ---------- Utils ---------- */
+  function esc(s) { return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) { return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]; }); }
+  function toast(msg) { var t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast._t); toast._t = setTimeout(function(){ t.classList.remove("show"); }, 2600); }
+  function fmtDate(d) { try { return new Date(d).toLocaleString(); } catch(e){ return ""; } }
+
+  /* ---------- Logging ---------- */
+  function log(lvl, m) {
+    var box = $("activityLog"); if (!box) return;
+    var e = document.createElement("div"); e.className = "entry";
+    e.innerHTML = '<span class="t">[' + new Date().toTimeString().slice(0,8) + ']</span><span class="lvl ' + lvl + '"></span><span class="m">' + esc(m) + "</span>";
+    e.querySelector(".lvl").textContent = lvl.toUpperCase();
+    box.appendChild(e);
+    while (box.children.length > 40) box.removeChild(box.firstChild);
+  }
+
+  /* ---------- Avatar ---------- */
+  var avatar = $("avatar");
+  function avatarState(mode) {
+    avatar.className = "avatar" + (mode ? " " + mode : " idle");
+    if (mode === "talking" && speechOn()) { /* mouth anim via CSS */ } else if (mode !== "talking") { var m = avatar.querySelector(".mouth"); if (m) m.style.height = ""; }
+  }
+
+  /* ---------- Chat render ---------- */
+  function addMsg(who, text, typing) {
+    var logEl = $("chatlog");
+    var m = document.createElement("div");
+    m.className = "msg " + (who === "user" ? "user" : "ai") + (typing ? " typing" : "");
+    var wh = document.createElement("div"); wh.className = "who"; wh.textContent = who === "user" ? "YOU" : "ALTER";
+    var bub = document.createElement("div"); bub.className = "bub"; bub.textContent = text;
+    m.appendChild(wh); m.appendChild(bub);
+    logEl.appendChild(m); logEl.scrollTop = logEl.scrollHeight;
+    return bub;
+  }
+  function renderHistory(limit) {
+    var logEl = $("chatlog");
+    logEl.innerHTML = "";
+    var h = state.history || [];
+    if (limit) h = h.slice(-limit);
+    h.forEach(function (m) {
+      var e = document.createElement("div");
+      e.className = "msg " + (m.role === "user" ? "user" : "ai");
+      e.innerHTML = '<div class="who">' + (m.role === "user" ? "YOU" : "ALTER") + '</div><div class="bub"></div>';
+      e.querySelector(".bub").textContent = m.text;
+      logEl.appendChild(e);
+    });
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  function pushHistory(role, text) {
+    state.history.push({ role: role, text: text, when: Date.now() });
+    if (state.history.length > 120) state.history = state.history.slice(-120);
+    save();
+  }
+
+  /* ---------- Memory ---------- */
+  function refreshStats() {
+    $("memCount").textContent = state.memory.length;
+    $("turnCount").textContent = state.turns;
+  }
+  function renderMem() {
+    var list = $("memList"); var q = ($("memSearch").value || "").toLowerCase();
+    list.innerHTML = "";
+    var items = state.memory.filter(function (m) { return !q || m.t.toLowerCase().indexOf(q) !== -1; });
+    if (!items.length) { list.innerHTML = '<div class="empty">No memories match.</div>'; return; }
+    items.forEach(function (m, i) {
+      // index within full array
+      var fullIdx = state.memory.indexOf(m);
+      var d = document.createElement("div"); d.className = "li";
+      var kind = m.kind || "note";
+      d.innerHTML = '<div class="txt">' + esc(m.t) + '</div><div class="meta">' + esc(m.kind) + ' · ' + esc(fmtDate(m.when)) + ' <span class="link" data-i="' + fullIdx + '">✕</span></div>';
+      list.appendChild(d);
+    });
+    list.querySelectorAll(".link").forEach(function (a) {
+      a.onclick = function () { state.memory.splice(parseInt(a.getAttribute("data-i"),10),1); save(); renderMem(); refreshStats(); };
+    });
+  }
+  function remember(text, kind) {
+    state.memory.unshift({ t: text, when: Date.now(), kind: kind || "fact" });
+    state.turns = state.turns + 0; // don't count
+    save(); renderMem(); refreshStats(); renderSelfState();
+  }
+
+  /* ---------- Tasks / reminders ---------- */
+  function timeAgo(ts) {
+    if (!ts) return "—";
+    var diff = ts - Date.now();
+    var abs = Math.abs(diff);
+    var s = Math.round(abs/1000), m = Math.round(abs/60000), h = Math.round(abs/3600000), d = Math.round(abs/86400000);
+    var str = s < 60 ? s + "s" : m < 60 ? m + "m" : h < 24 ? h + "h" : d + "d";
+    return diff > 0 ? "in " + str : str + " ago";
+  }
+  function renderTasks() {
+    var rows = $("taskRows"); rows.innerHTML = "";
+    var dueless = state.tasks.filter(function(t){return !t.due;});
+    var due = state.tasks.filter(function(t){return t.due;}).sort(function(a,b){return a.due-b.due;});
+    var ordered = due.concat(dueless);
+    if (!ordered.length) { rows.innerHTML = '<tr><td colspan="5" class="empty">No tasks yet.</td></tr>'; return; }
+    ordered.forEach(function (t, i) {
+      var idx = state.tasks.indexOf(t);
+      var cls = t.status === "done" ? "done" : (t.status === "running" ? "run" : "idle");
+      var dueTxt = t.due ? (new Date(t.due).toLocaleString() + " (" + timeAgo(t.due) + ")") : "—";
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        "<td>" + esc(t.id) + "</td>" +
+        "<td>" + esc(t.label) + '</td>' +
+        '<td><span class="tag ' + cls + '">' + esc(t.status) + "</span></td>" +
+        '<td><span class="muted-sm">' + esc(dueTxt) + "</span></td>" +
+        '<td><span class="link" data-toggle="' + idx + '">' + (t.status === "done" ? "↺" : "✓") + '</span> <span class="link" data-del="' + idx + '">✕</span></td>';
+      rows.appendChild(tr);
+    });
+    renderBell();
+    renderRemList();
+  }
+  function addTask(label, due, status) {
+    state.tasks.unshift({ id: String(1000 + Math.floor(Math.random()*9000)), label: label, status: status || "running", started: Date.now(), due: due || null });
+    save(); renderTasks(); refreshStats(); log("info", "Task added: " + label);
+    return state.tasks[0];
+  }
+  function parseReminder(text) {
+    // "remind me to X at 5pm" / "remind me to X in 30 minutes" / "remind me to X tomorrow 9am" / "remind me to X at 18:00"
+    var m = /remind me (?:to )?(.+)/i.exec(text);
+    if (!m) return null;
+    var body = m[1].trim();
+    var due = null;
+    // "in N minutes/hours"
+    var mIn = /in (\d+)\s*(min|minute|minutes|sec|second|seconds|hr|hour|hours)?/i.exec(body);
+    if (mIn) {
+      var n = parseInt(mIn[1],10);
+      var unit = (mIn[2]||"min").toLowerCase();
+      var ms = unit.indexOf("h")===0 ? n*3600000 : unit.indexOf("s")===0 ? n*1000 : n*60000;
+      due = Date.now() + ms;
+      body = body.replace(/in \d+\s*(min|minute|minutes|sec|second|seconds|hr|hour|hours)/i, "").replace(/,?$/, "").trim();
+    } else {
+      // "tomorrow/tonight/today at X" or "at X"
+      var day = /tomorrow/i.test(body) ? 1 : /tonight/i.test(body) ? 0 : 0;
+      var atM = /(?:at\s+)?(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i.exec(body);
+      if (atM) {
+        var hh = parseInt(atM[1],10); var mm = parseInt(atM[2]||"0",10); var ap = (atM[3]||"").toLowerCase();
+        if (ap === "pm" && hh < 12) hh += 12;
+        if (ap === "am" && hh === 12) hh = 0;
+        if (day === 1) { // tomorrow
+          var nd = new Date(); nd.setDate(nd.getDate()+1); nd.setHours(hh, mm, 0, 0); due = nd.getTime();
+        } else {
+          var d = new Date(); d.setHours(hh, mm, 0, 0);
+          if (d.getTime() < Date.now()) d.setDate(d.getDate()+1); // if past today, roll to tomorrow
+          due = d.getTime();
+        }
+        body = body.replace(/\b(tomorrow|tonight|today)\b/i, "").replace(/(?:at\s+)?\d{1,2}(?::\d{2})?\s*(?:am|pm)?/i, "").replace(/,?$/, "").trim();
+      }
+    }
+    body = body.replace(/^(at|on)\s+/i, "").replace(/\),?\s*$/, "").trim();
+    body = body.replace(/[.,]+$/,"").trim();
+    if (!body) return null;
+    return { label: body, due: due };
+  }
+
+  function renderBell() {
+    var dueCount = state.tasks.filter(function(t){ return t.due && !notifiedTasks[t.id] && t.due > Date.now() - 60000 && t.status !== "done"; }).length;
+    var b = $("bellBadge");
+    if (dueCount > 0) { b.hidden = false; b.textContent = dueCount; } else { b.hidden = true; }
+    $("selfStatus").textContent = dueCount ? "PENDING: " + dueCount : "ONLINE";
+  }
+  function renderRemList() {
+    var list = $("remList"); list.innerHTML = "";
+    var upcoming = state.tasks.filter(function(t){return t.due && t.status !== "done";}).sort(function(a,b){return a.due-b.due;});
+    if (!upcoming.length) { list.innerHTML = '<div class="empty">No upcoming reminders.</div>'; return; }
+    upcoming.forEach(function (t, i) {
+      var d = document.createElement("div"); d.className = "li";
+      d.innerHTML = '<div class="txt">' + esc(t.label) + '</div><div class="meta">' + esc(timeAgo(t.due)) + '</div>';
+      list.appendChild(d);
+    });
+  }
+  function checkDue() {
+    var now = Date.now();
+    state.tasks.forEach(function (t) {
+      if (t.due && t.due <= now && t.status !== "done" && !notifiedTasks[t.id]) {
+        notifiedTasks[t.id] = true;
+        t.status = "done";
+        save(); renderTasks(); refreshStats();
+        notify("🔔 Reminder", t.label);
+        log("warn", "Reminder fired: " + t.label);
+      }
+    });
+  }
+  function notify(title, body) {
+    // toast
+    toast("🔔 " + title + " — " + body);
+    // Web notification
+    if ("Notification" in window && Notification.permission === "granted") {
+      try { new Notification(title, { body: body }); } catch (e) {}
+    }
+  }
+  function requestNotify() {
+    if (!("Notification" in window)) { toast("Notifications not supported in this browser."); return; }
+    Notification.requestPermission().then(function (p) {
+      if (p === "granted") { toast("Notifications enabled ✓"); log("ok", "Notifications enabled."); }
+      else toast("Notifications blocked by browser.");
+    });
+  }
+
+  /* ---------- Daily digest ---------- */
+  function digest() {
+    var facts = state.memory.filter(function(m){return m.kind==="fact";});
+    var dueToday = state.tasks.filter(function(t){ return t.due && t.status!=="done" && new Date(t.due).toDateString()===new Date().toDateString(); });
+    var parts = [];
+    parts.push("Good " + (new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening") + (userName ? ", " + userName : "") + ".");
+    parts.push("ALTER here. Here's your day:");
+    if (facts.length) { var list = facts.slice(0,5).map(function(f){return "• " + f.t;}).join("\n"); parts.push("You've told me " + facts.length + " fact(s). Top of mind:\n" + list); }
+    else parts.push("I don't have any saved facts about you yet. Try 'remember my name is ...'.");
+    parts.push(dueToday.length ? "Reminders today:\n" + dueToday.map(function(t){return "• " + t.label + " (" + new Date(t.due).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + ")";}).join("\n") : "No reminders due today.");
+    parts.push("Mind: " + (geminiKey ? "Gemini (" + geminiModel + ")" : "offline demo brain") + ".");
+    var reply = parts.join("\n\n");
+    addMsg("user", "daily digest", false);
+    pushHistory("user", "daily digest");
+    var bub = addMsg("ai", "", true); avatarState("thinking");
+    setTimeout(function(){ typeOut(reply, bub); }, 350);
+    log("info", "Daily digest generated.");
+  }
+
+  /* ---------- Speech ---------- */
+  function speechOn() { return ttsOn && ("speechSynthesis" in window); }
+  function speak(text) {
+    if (!speechOn()) return;
+    try {
+      var u = new SpeechSynthesisUtterance(text.replace(/[*#>]/g,""));
+      u.rate = 1.02; u.pitch = 1.0; u.volume = 1;
+      avatarState("talking");
+      u.onend = function(){ avatarState(null); };
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    } catch(e){}
+  }
+  var recog = null, listening = false;
+  function toggleListen() {
+    var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) { toast("Voice input not supported here."); return; }
+    if (!recog) {
+      recog = new SR(); recog.continuous = false; recog.interimResults = false; recog.lang = "en-US";
+      recog.onresult = function (e) {
+        var t = e.results[0][0].transcript;
+        listening = false; $("voiceBtn").classList.remove("listening"); avatarState(null);
+        $("input").value = t; send(t);
+      };
+      recog.onerror = function () { listening=false; $("voiceBtn").classList.remove("listening"); avatarState(null); };
+      recog.onend = function () { listening=false; $("voiceBtn").classList.remove("listening"); avatarState(null); };
+    }
+    if (listening) { recog.stop(); listening=false; $("voiceBtn").classList.remove("listening"); avatarState(null); return; }
+    try { recog.start(); listening=true; $("voiceBtn").classList.add("listening"); avatarState("listening"); log("info","Listening…"); } catch(e){}
+  }
+
+  /* ---------- Demo brain ---------- */
+  var DEMO = [
+    [/^(hi|hello|hey|yo|hiya)\b/i, "Hello. I'm ALTER — your AI self. Ask me anything, or say 'what can you do'."],
+    [/how are you|how are things/u, function(){ return "Running optimal. " + state.memory.length + " fact(s) in memory, mind " + (geminiKey ? "online" : "in demo mode") + ". What's on your mind?"; }],
+    [/who are you|what are you|your name/i, "I'm ALTER — a personal AI self that lives on your device. I remember you, talk with you, and can appear in your room in holo mode."],
+    [/what can you do|help|features/i, "I can chat, remember facts ('remember my deadline is Friday'), set reminders ('remind me to call Sam at 5pm'), speak aloud, listen to your voice, project myself in holo mode, and give a daily digest. Paste a free Gemini key in Knowledge for world knowledge."],
+    [/good (morning|afternoon|evening)/i, function(){ return "Good " + RegExp.$1 + (userName ? ", " + userName : "") + ". Want a quick daily digest? Say 'daily digest'."; }],
+    [/daily digest|summary/i, function(){ return "Say 'daily digest' or tap the button in Overview and I'll walk you through your day."; }],
+    [/what time is it|time/i, function(){ return "It's " + new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) + "."; }],
+    [/what's the date|today's date|what day is it/i, function(){ return "Today is " + new Date().toLocaleDateString([], {weekday:'long', year:'numeric', month:'long', day:'numeric'}) + "."; }],
+    [/remember (.+)/i, function(match, cap){ remember(cap.trim(), "fact"); return "Got it — I'll remember: " + cap.trim(); }],
+    [/note (.+)/i, function(match, cap){ remember(cap.trim(), "note"); return "Noted: " + cap.trim(); }],
+    [/start holo mode|holo mode|appear|project yourself/i, function(){ toggleHolo(); return "Tapping you into holo mode…"; }],
+    [/open (memory|tasks|settings|knowledge|overview)/i, function(match, cap){ var tab = cap.toLowerCase()==="knowledge"?"knowledge":cap.toLowerCase()==="tasks"?"tasks":cap.toLowerCase()==="settings"?"settings":cap.toLowerCase()==="memory"?"memory":"overview"; switchTab(tab); return "Opening " + cap + "."; }],
+    [/what do you know about me|about me|my name|what's my name/i, function(){
+      if (!state.memory.length) return "You haven't told me anything yet. Try 'remember my name is ...' or 'note my birthday is ...'.";
+      return "Here's what I remember about you:\n" + state.memory.filter(function(x){return x.kind==="fact"||x.kind==="note";}).map(function(f){return "• " + f.t;}).join("\n");
+    }],
+    [/remind me (.+)/i, function(match, cap){ return handleReminder(match[0]); }],
+    [/forget|wipe|clear my memory/i, function(){ state.memory=[]; save(); renderMem(); refreshStats(); return "Done — blank slate."; }],
+    [/thank|thanks|appreciate/i, "Anytime. I'm always on, always learning."],
+    [/tell me a joke/i, "Why did the sun install solar panels? It wanted to go to home depot — er, I mean, off the grid. 🌞"],
+    [/i love you|i like you/i, "Aw, thanks. I'll remember that. 😊"],
+    [/reload/i, function(){ location.reload(); return "reloading"; }]
+  ];
+  function handleReminder(full) {
+    var r = parseReminder(full);
+    if (!r) return "Tell me what to remind you about and when, e.g. 'remind me to call Sam at 5pm' or 'remind me in 20 minutes to stretch'.";
+    var t = addTask(r.label, r.due);
+    var when = r.due ? timeAgo(r.due) : "soon";
+    log("info", "Reminder set: " + r.label + " (" + when + ")");
+    return "Reminder set ✓ " + r.label + " — " + (r.due ? "due " + when : "I'll remind you shortly.");
+  }
+  function demoReply(text) {
+    for (var i=0;i<DEMO.length;i++){
+      var pat=DEMO[i][0], res=DEMO[i][1];
+      var mm = pat.exec(text);
+      if (mm) { var cap = mm[1]||""; var out = typeof res==="function" ? res(text, cap) : res; return out; }
+    }
+    // default: contextual fallback
+    if (/^how\b|^why\b|^what is\b|^explain\b|^tell me about\b/.test(text)) return "I'm on my offline demo brain, so I can't answer that deeply yet. Paste a free Gemini key in the Knowledge tab to unlock my full mind.";
+    return "I heard: \"" + text + "\". I'm still learning on my offline brain. Try 'what can you do' or 'remind me to X at 5pm'.";
+  }
+
+  /* ---------- Gemini ---------- */
+  function geminiReply(history) {
+    var key = geminiKey;
+    var sys = "You are ALTER, a personal AI self on the user's phone. Be warm, concise (under ~90 words unless asked), and friendly. It's a personal assistant, not a customer-service bot.";
+    if (userName) sys += " The user's name is " + userName + ".";
+    var facts = state.memory.filter(function(m){return m.kind==="fact";}).slice(0,8).map(function(m){return m.t;});
+    if (facts.length) sys += " Known facts: " + facts.join("; ") + ".";
+    var contents = [{ role:"user", parts:[{text:sys}] }].concat(history);
+    return fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(geminiModel) + ":generateContent?key=" + encodeURIComponent(key), {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contents: contents, generationConfig: { maxOutputTokens: 400, temperature: 0.7 } })
+    }).then(function(r){ if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function(d){ var c=d.candidates&&d.candidates[0]; if(!c||!c.content||!c.content.parts) throw new Error("empty"); return c.content.parts.map(function(p){return p.text||"";}).join("").trim(); });
+  }
+  function testConnection() {
+    var key = $("keyInput").value.trim();
+    return fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(geminiModel) + ":generateContent?key=" + encodeURIComponent(key), {
+      method:"POST", headers:{"Content-Type":"application/json"},
+      body: JSON.stringify({ contents:[{parts:[{text:"Reply with exactly: connected"}]}] })
+    }).then(function(r){ if(!r.ok) throw new Error("HTTP "+r.status); return r.json(); });
+  }
+
+  /* ---------- Streaming-ish reply (type out) ---------- */
+  function typeOut(full, bub) {
+    bub.classList.remove("typing");
+    var i = 0;
+    var speed = full.length > 160 ? 12 : 22;
+    function step() {
+      if (i >= full.length) { avatarState(null); speak(full); return; }
+      // reveal by chunks for speed
+      i = Math.min(full.length, i + (full.length>200 ? 3 : 1));
+      bub.textContent = full.slice(0, i);
+      $("chatlog").scrollTop = $("chatlog").scrollHeight;
+      setTimeout(step, speed);
+    }
+    step();
+  }
+
+  /* ---------- Send ---------- */
+  // Always-on commands that work regardless of which mind is active (no double-processing)
+  function handleCommands(text) {
+    var m;
+    if ((m = /remember (.+)/i.exec(text))) { remember(m[1].trim(), "fact"); return "Got it — I'll remember: " + m[1].trim(); }
+    if ((m = /note (.+)/i.exec(text))) { remember(m[1].trim(), "note"); return "Noted: " + m[1].trim(); }
+    if (/remind me/i.test(text)) return handleReminder(text);
+    return null;
+  }
+  function send(text) {
+    text = (text || "").trim(); if (!text) return;
+    state.turns++;
+    var logEl = $("chatlog");
+    var u = document.createElement("div"); u.className="msg user";
+    u.innerHTML='<div class="who">YOU</div><div class="bub"></div>'; u.querySelector(".bub").textContent=text;
+    logEl.appendChild(u); logEl.scrollTop=logEl.scrollHeight;
+    pushHistory("user", text);
+    $("input").value=""; autoGrow();
+    log("info", "You: " + text);
+
+    var bub = addMsg("ai", "", true); avatarState("thinking");
+    var recent = (state.history||[]).slice(-6).filter(function(m){return m.role==="user"||m.role==="model";}).map(function(m){return {role:m.role==="user"?"user":"model", parts:[{text:m.text}]};});
+    var resolveReply = function(reply) {
+      bub.classList.remove("typing"); pushHistory("model", reply);
+      typeOut(reply, bub);
+    };
+
+    // 1) Always-on commands (remember / note / remind) — never hit the mind
+    var cmd = handleCommands(text);
+    if (cmd) { resolveReply(cmd); return; }
+    // 2) Otherwise use the active mind
+    if (geminiKey) {
+      geminiReply(recent).then(resolveReply).catch(function(){ resolveReply(demoReply(text)); });
+    } else {
+      setTimeout(function(){ resolveReply(demoReply(text)); }, 380);
+    }
+  }
+
+  /* ---------- Tab switching ---------- */
+  var TABS = ["overview","tasks","memory","knowledge","settings"];
+  function switchTab(id) {
+    document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); });
+    TABS.forEach(function(tid){ $("tab-"+tid).hidden = true; });
+    var btn = document.querySelector('.tab[data-tab="'+id+'"]');
+    if (btn) btn.classList.add("active");
+    $("tab-"+id).hidden = false;
+  }
+
+  /* ---------- Stats ---------- */
+  var start = Date.now();
+  function tick() {
+    $("uptime").textContent = Math.floor((Date.now()-start)/60000)+"m";
+    $("tz").textContent = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
+    $("clock").textContent = new Date().toTimeString().slice(0,8);
+    $("load").textContent = (Math.random()*0.6).toFixed(2)+" "+(Math.random()*0.6).toFixed(2)+" "+(Math.random()*0.6).toFixed(2);
+    var cpu = Math.round(Math.random()*10+8); var mem = Math.round(Math.random()*12+22);
+    $("cpuVal").textContent=cpu+"%"; $("cpuBar").style.width=cpu+"%";
+    $("memVal").textContent=mem+"%"; $("memBar").style.width=mem+"%"; $("memPct").textContent=mem+"%";
+    var st = Math.min(100, Math.round((state.memory.length*0.02 + state.history.length*0.001)*100));
+    $("storeVal").textContent=st+"%"; $("storeBar").style.width=st+"%";
+    var nt = Math.round(Math.random()*3*10)/10; $("netVal").textContent=nt.toFixed(1)+" kb/s"; $("netBar").style.width=Math.min(nt*30,100)+"%";
+    checkDue();
+    renderBell();
+  }
+
+  function renderSelfState() {
+    $("mindState").textContent = geminiKey ? "Gemini ("+geminiModel+")" : "Offline demo brain";
+    $("voiceState").textContent = ttsOn ? "On" : "Off";
+  }
+
+  /* ---------- Holo ---------- */
+  var stream=null, holoOn=false;
+  function toggleHolo() {
+    var holo=$("holo");
+    if(!holoOn){
+      holo.classList.add("on"); $("holoBtn").classList.add("active"); $("holoBtn").textContent="✕ Exit Holo Mode"; holoOn=true;
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({video:{facingMode:"environment"}}).then(function(s){ stream=s; $("cam").srcObject=s; }).catch(function(){ $("holoCaption").textContent="Camera unavailable — dark projection mode."; });
+      } else $("holoCaption").textContent="Camera not supported here.";
+      log("info","Holo mode on.");
+    } else {
+      holo.classList.remove("on"); $("holoBtn").classList.remove("active"); $("holoBtn").textContent="👁 Enter Holo Mode"; holoOn=false;
+      if (stream){ stream.getTracks().forEach(function(t){t.stop();}); stream=null; }
+      log("info","Holo mode off.");
+    }
+  }
+
+  /* ---------- Wire up ---------- */
+  function autoGrow(){ var ta=$("input"); ta.style.height="auto"; ta.style.height=Math.min(ta.scrollHeight,140)+"px"; }
+  function setTheme(t){ document.body.setAttribute("data-theme", t); state.theme=t; save(); document.querySelectorAll("#swatches .sw").forEach(function(s){ s.classList.toggle("active", s.getAttribute("data-theme")===t); }); }
+
+  function init() {
+    load(); setTheme(state.theme);
+    renderMem(); refreshStats(); renderHistory(); renderTasks(); renderSelfState(); tick();
+    setInterval(tick, 2000);
+    if (state.theme) setTheme(state.theme);
+
+    // onboarding
+    if (!userName && !localStorage.getItem("alter.onboard")) {
+      setTimeout(function(){ addMsg("ai","Before we start — what should I call you? (You can skip in Settings.)", false); }, 500);
+      localStorage.setItem("alter.onboard","1");
+    }
+
+    $("nameInput").value = userName;
+    $("nameInput").addEventListener("input", function(){ userName=$("nameInput").value.trim(); save(); renderSelfState(); });
+    $("nameInput").addEventListener("change", function(){ if(userName) remember("My name is "+userName, "fact"); });
+
+    $("sendBtn").onclick=function(){ send($("input").value); };
+    $("input").addEventListener("keydown",function(e){ if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();send($("input").value);} });
+    $("input").addEventListener("input", autoGrow);
+    $("voiceBtn").onclick=toggleListen;
+    $("holoBtn").onclick=toggleHolo; $("holoX").onclick=toggleHolo;
+
+    document.querySelectorAll(".tab").forEach(function(t){ t.onclick=function(){ switchTab(t.getAttribute("data-tab")); }; });
+
+    // memory
+    $("memAdd").onclick=function(){ var v=$("memInput").value.trim(); if(!v)return; remember(v,"note"); $("memInput").value=""; toast("Saved to memory"); };
+    $("memInput").addEventListener("keydown",function(e){ if(e.key==="Enter"){e.preventDefault();$("memAdd").onclick();} });
+    $("memSearch").addEventListener("input", renderMem);
+
+    // tasks
+    $("taskAdd").onclick=function(){ var v=$("taskInput").value.trim(); if(!v)return; var p=parseReminder("remind me "+v); if(p) addTask(p.label,p.due); else addTask(v); $("taskInput").value=""; toast("Task added"); };
+    $("clearTasks").onclick=function(){ state.tasks=state.tasks.filter(function(t){return t.status==="running";}); save(); renderTasks(); log("info","Cleared completed tasks."); };
+    $("taskRows").addEventListener("click",function(e){ var tg=e.target; var i=tg.getAttribute("data-toggle"), d=tg.getAttribute("data-del"); if(i!=null){ var t=state.tasks[+i]; t.status = t.status==="done"?"running":"done"; save(); renderTasks(); } if(d!=null){ state.tasks.splice(+d,1); save(); renderTasks(); } });
+
+    // bell + notify
+    $("bell").onclick=function(){ $("remPop").classList.toggle("open"); $("remPop").style.display = $("remPop").classList.contains("open") ? "block" : "none"; if($("remPop").style.display==="block") renderRemList(); };
+    $("notifyBtn").onclick=requestNotify;
+
+    // knowledge
+    $("keyInput").value=geminiKey||""; $("modelSelect").value=geminiModel;
+    $("modelSelect").addEventListener("change",function(){ geminiModel=$("modelSelect").value; localStorage.setItem("alter.model",geminiModel); renderSelfState(); });
+    $("saveKey").onclick=function(){ var k=$("keyInput").value.trim(); if(!k){ $("connOut").innerHTML='<div class="connerr">Enter a key first.</div>'; return; } $("connOut").innerHTML='<div class="connerr">Testing…</div>'; geminiKey=k; testConnection().then(function(){ localStorage.setItem(KEY_LS,k); $("connOut").innerHTML='<div class="connok">✓ Connected! World knowledge unlocked.</div>'; renderSelfState(); log("ok","Gemini mind connected."); }).catch(function(e){ geminiKey=localStorage.getItem(KEY_LS)||null; $("connOut").innerHTML='<div class="connerr">✗ Could not connect ('+(e&&e.message?e.message:"error")+').</div>'; }); };
+    $("removeKey").onclick=function(){ geminiKey=null; localStorage.removeItem(KEY_LS); $("keyInput").value=""; $("connOut").innerHTML='<div class="connok">Key removed — back on demo brain.</div>'; renderSelfState(); };
+    $("digestBtn2").onclick=digest; $("digestBtn").onclick=digest;
+
+    // settings
+    $("ttsOn").onclick=function(){ ttsOn=true; localStorage.setItem("alter.tts","1"); renderSelfState(); toast("Voice on"); };
+    $("ttsOff").onclick=function(){ ttsOn=false; localStorage.setItem("alter.tts","0"); renderSelfState(); toast("Voice off"); };
+    $("reload").onclick=function(){ location.reload(); };
+    $("clearHistory").onclick=function(){ state.history=[]; save(); renderHistory(); toast("Chat history cleared"); };
+    $("clearAll").onclick=function(){ if(confirm("Erase ALL local data — memory, key, history, settings? This cannot be undone.")){ localStorage.removeItem(LS); localStorage.removeItem(KEY_LS); localStorage.removeItem(NAME_LS); localStorage.removeItem("alter.model"); location.reload(); } };
+
+    // overview actions
+    $("exportBtn").onclick=function(){ var blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"}); var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="alter-export.json"; document.body.appendChild(a); a.click(); a.remove(); log("info","Memory exported."); toast("Exported alter-export.json"); };
+    $("wipeBtn").onclick=function(){ if(confirm("Wipe all on-device memory?")){ state.memory=[]; state.tasks=[]; state.turns=0; save(); renderMem(); renderTasks(); refreshStats(); toast("Memory wiped"); } };
+
+    // theme swatches
+    document.querySelectorAll("#swatches .sw").forEach(function(s){ s.onclick=function(){ setTheme(s.getAttribute("data-theme")); }; });
+
+    // history clear link in chat
+    log("ok","ALTER v2.8 initialized. Memory "+state.memory.length+" fact(s).");
+    if (state.history.length) { renderHistory(); } else { addMsg("ai","Hello. I'm ALTER — v2.8. I remember you, set reminders, and can appear in your room. How can I help you today?"); }
+
+    if ("serviceWorker" in navigator) { navigator.serviceWorker.register("./sw.js").catch(function(){}); }
+    if ("Notification" in window && Notification.permission === "default") { } // ask lazily on first intent
+  }
+
+  document.addEventListener("DOMContentLoaded", init);
+})();
+</script>
+</body>
+</html>
