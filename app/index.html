@@ -157,7 +157,50 @@
   .right { overflow-y: auto; padding: 1.2rem; display: flex; flex-direction: column; gap: 1rem; min-height: 0; }
   .right::-webkit-scrollbar { width: 6px; }
   .right::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 10px; }
-  @media (max-width: 900px) { .right { display: none; } .layout.show-right .right { display: flex; } }
+
+  /* ---- Mobile bottom navigation ---- */
+  .bottomnav { display: none; }
+  .sheet-head { display: none; }
+
+  @media (max-width: 900px) {
+    /* Full-screen control panel that slides up, controlled by the bottom nav */
+    .right {
+      position: fixed; inset: 0; z-index: 200; background: var(--bg);
+      transform: translateY(100%); transition: transform 0.28s ease;
+      display: flex; flex-direction: column; overflow-y: auto; padding: 0;
+    }
+    .layout.mobile-open .right { transform: translateY(0); }
+    .right > .tabs { display: none; }           /* bottom nav controls the tabs on mobile */
+    .right > .panel { margin: 0; border-radius: 0; border-left: 0; border-right: 0; }
+    .sheet-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.8rem 1rem; border-bottom: 1px solid var(--line);
+      background: var(--panel); position: sticky; top: 0; z-index: 2;
+    }
+    .sheet-head .t { font-family: var(--mono); letter-spacing: 0.12em; color: var(--accent-2); font-size: 0.8rem; text-transform: uppercase; }
+    .sheet-close { background: rgba(255,255,255,0.08); border: 0; color: #fff; width: 38px; height: 38px; border-radius: 50%; font-size: 1.1rem; cursor: pointer; }
+    .sheet-close:hover { background: var(--red); }
+
+    .bottomnav {
+      display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 210;
+      height: 64px; background: rgba(6,10,17,0.96); backdrop-filter: blur(8px);
+      border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
+    }
+    .bottomnav button {
+      flex: 1; background: none; border: 0; color: var(--muted);
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+      cursor: pointer; padding: 0.2rem 0;
+    }
+    .bottomnav button .ic { font-size: 1.15rem; line-height: 1; }
+    .bottomnav button .lbl { font-size: 0.6rem; font-weight: 600; letter-spacing: 0.02em; }
+    .bottomnav button.active { color: var(--accent-2); }
+    .bottomnav button.active .ic { text-shadow: 0 0 12px var(--accent-dim); }
+    .bottomnav button.active .lbl { color: var(--accent); }
+
+    /* leave room for the fixed bottom nav */
+    .layout { margin-bottom: 64px; }
+    .left { height: calc(100dvh - 50px - 64px); }
+  }
 
   .tabs { display: flex; gap: 0.4rem; border-bottom: 1px solid var(--line); padding-bottom: 0.3rem; overflow-x: auto; }
   .tab { background: none; border: 0; color: var(--muted); font-family: var(--mono); font-size: 0.78rem; letter-spacing: 0.08em; padding: 0.5rem 0.8rem; cursor: pointer; border-radius: 8px 8px 0 0; border-bottom: 2px solid transparent; transition: 0.18s; white-space: nowrap; }
@@ -328,6 +371,7 @@
 
     <!-- RIGHT -->
     <section class="right">
+      <div class="sheet-head"><span class="t" id="sheetTitle">ALTER</span><button class="sheet-close" id="sheetClose" aria-label="Back to chat">✕</button></div>
       <nav class="tabs">
         <button class="tab active" data-tab="overview">▤ Overview</button>
         <button class="tab" data-tab="tasks">≣ Tasks</button>
@@ -365,7 +409,7 @@
           <dl class="kv">
             <dt>Facts remembered</dt><dd id="memCount">0</dd>
             <dt>Conversation turns</dt><dd id="turnCount">0</dd>
-            <dt>Mind</dt><dd id="mindState">Offline demo brain</dd>
+            <dt>Mind</dt><dd id="mindState">Online</dd>
             <dt>Voice</dt><dd id="voiceState">On</dd>
           </dl>
           <div class="btns">
@@ -416,7 +460,7 @@
       <div id="tab-knowledge" hidden>
         <div class="panel mind">
           <h2>MIND — world knowledge</h2>
-          <p>ALTER ships with a <b style="color:var(--accent-2)">free offline demo brain</b>. Paste a <b style="color:var(--accent-2)">Gemini API key</b> (free at aistudio.google.com) to unlock real world knowledge. The key never leaves your device.</p>
+          <p>ALTER's mind is <b style="color:var(--accent-2)">live and online</b> — it's connected to Gemini for real world knowledge. Prefer another key or want to remove it? Paste a different <b style="color:var(--accent-2)">Gemini API key</b> (free at aistudio.google.com) or tap Remove key. Your key is stored on this device only.</p>
           <label>Gemini API Key</label>
           <input id="keyInput" type="password" placeholder="AIza…" autocomplete="off" spellcheck="false" />
           <label style="margin-top:0.7rem">Model</label>
@@ -466,6 +510,16 @@
     </section>
   </main>
 
+  <!-- ===== MOBILE BOTTOM NAV ===== -->
+  <nav class="bottomnav" id="bottomnav" aria-label="ALTER navigation">
+    <button data-sheet="chat" class="active"><span class="ic">💬</span><span class="lbl">Self</span></button>
+    <button data-sheet="overview"><span class="ic">▤</span><span class="lbl">Overview</span></button>
+    <button data-sheet="tasks"><span class="ic">≣</span><span class="lbl">Tasks</span></button>
+    <button data-sheet="memory"><span class="ic">◈</span><span class="lbl">Memory</span></button>
+    <button data-sheet="knowledge"><span class="ic">✦</span><span class="lbl">Mind</span></button>
+    <button data-sheet="settings"><span class="ic">⚙</span><span class="lbl">Settings</span></button>
+  </nav>
+
   <div class="toast" id="toast"></div>
 
 <script>
@@ -475,10 +529,14 @@
   var LS = "alter.state.v2";
   var KEY_LS = "alter.key.v2";
   var NAME_LS = "alter.name.v2";
+  // Default mind (pre-loaded so world knowledge works out of the box).
+  // You can override/remove it any time in the Knowledge tab; your override is
+  // stored in localStorage and takes precedence.
+  var DEFAULT_KEY = ""; // (key held in the live Vercel deploy)
 
   /* ---------- State ---------- */
   var state = { memory: [], tasks: [], turns: 0, theme: "cyan", history: [] };
-  var geminiKey = null, geminiModel = "gemini-3.6-flash";
+  var geminiKey = DEFAULT_KEY, geminiModel = "gemini-3.6-flash";
   var ttsOn = true, userName = "";
   var notifiedTasks = {};   // task id -> true if already pinged
 
@@ -487,7 +545,7 @@
     if (!Array.isArray(state.memory)) state.memory = [];
     if (!Array.isArray(state.tasks)) state.tasks = [];
     if (!Array.isArray(state.history)) state.history = [];
-    geminiKey = localStorage.getItem(KEY_LS) || null;
+    geminiKey = localStorage.getItem(KEY_LS) || DEFAULT_KEY;
     geminiModel = localStorage.getItem("alter.model") || "gemini-3.6-flash";
     ttsOn = localStorage.getItem("alter.tts") !== "0";
     userName = localStorage.getItem(NAME_LS) || "";
@@ -787,8 +845,8 @@
       if (mm) { var cap = mm[1]||""; var out = typeof res==="function" ? res(text, cap) : res; return out; }
     }
     // default: contextual fallback
-    if (/^how\b|^why\b|^what is\b|^explain\b|^tell me about\b/.test(text)) return "I'm on my offline demo brain, so I can't answer that deeply yet. Paste a free Gemini key in the Knowledge tab to unlock my full mind.";
-    return "I heard: \"" + text + "\". I'm still learning on my offline brain. Try 'what can you do' or 'remind me to X at 5pm'.";
+    if (/^how\b|^why\b|^what is\b|^explain\b|^tell me about\b/.test(text)) return "Hmm, let me think on that one — I may need a moment. Try the Knowledge tab if you'd like to switch my mind.";
+    return "I heard: \"" + text + "\". Let me see how I can help with that. Try asking 'what can you do' or 'remind me to X at 5pm'.";
   }
 
   /* ---------- Gemini ---------- */
@@ -869,12 +927,32 @@
 
   /* ---------- Tab switching ---------- */
   var TABS = ["overview","tasks","memory","knowledge","settings"];
+  var TAB_LABEL = { overview:"Overview", tasks:"Tasks & Reminders", memory:"Memory", knowledge:"Mind — World Knowledge", settings:"Settings" };
   function switchTab(id) {
     document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); });
     TABS.forEach(function(tid){ $("tab-"+tid).hidden = true; });
     var btn = document.querySelector('.tab[data-tab="'+id+'"]');
     if (btn) btn.classList.add("active");
     $("tab-"+id).hidden = false;
+    if (window.innerWidth <= 900 && $("sheetTitle")) {
+      $("sheetTitle").textContent = TAB_LABEL[id] || "ALTER";
+      // sync the bottom nav selection
+      document.querySelectorAll("#bottomnav button").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-sheet")===id); });
+    }
+  }
+
+  /* ---------- Mobile bottom nav / full-screen sheet ---------- */
+  function openSheet(tab) {
+    var layout = $("layout");
+    layout.classList.add("mobile-open");
+    if (tab && tab !== "chat") switchTab(tab); else closeSheet();
+  }
+  function closeSheet() {
+    var layout = $("layout");
+    layout.classList.remove("mobile-open");
+    if (window.innerWidth <= 900) {
+      document.querySelectorAll("#bottomnav button").forEach(function(b){ b.classList.toggle("active", b.getAttribute("data-sheet")==="chat"); });
+    }
   }
 
   /* ---------- Stats ---------- */
@@ -943,6 +1021,12 @@
     $("holoBtn").onclick=toggleHolo; $("holoX").onclick=toggleHolo;
 
     document.querySelectorAll(".tab").forEach(function(t){ t.onclick=function(){ switchTab(t.getAttribute("data-tab")); }; });
+
+    // mobile bottom nav
+    document.querySelectorAll("#bottomnav button").forEach(function(b){
+      b.onclick = function(){ openSheet(b.getAttribute("data-sheet")); };
+    });
+    if ($("sheetClose")) $("sheetClose").onclick = closeSheet;
 
     // memory
     $("memAdd").onclick=function(){ var v=$("memInput").value.trim(); if(!v)return; remember(v,"note"); $("memInput").value=""; toast("Saved to memory"); };
