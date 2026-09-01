@@ -26,7 +26,11 @@ A personal AI self that lives on your phone. It knows the **world** (any LLM, pl
 **Option B — GitHub Pages (free, auto-deploys on every push):**
 1. Push this folder to a new repo on GitHub
 2. Repo → **Settings → Pages → Build and deployment → Source: `GitHub Actions`**
-3. Done — the included workflow deploys `app/` automatically to `https://<you>.github.io/<repo>/`
+3. Add a GitHub Actions workflow (e.g. this repo's `deploy.yml`) that uploads the `app/` folder — it deploys to `https://<you>.github.io/<repo>/`. Adding a workflow file needs a token with **`workflow` scope**.
+
+**Option C — Vercel (used for the live demo):**
+1. `npx vercel --prod` inside the `app/` folder, or
+2. Import this GitHub repo in Vercel and point the root at `app/`. Live demo: **<https://alter-navy-gamma.vercel.app>**
 
 **Optional (free) — unlock world knowledge:**
 Get a free key at [aistudio.google.com](https://aistudio.google.com) (*Get API key*) → open the app → **MIND** tab → paste → **TEST CONNECTION**. Without a key, ALTER runs on its offline demo brain.
